@@ -24,7 +24,7 @@ class LoginPage extends StatefulWidget {
   _LoginPage createState() => _LoginPage();
 }
 
-class _LoginPage extends State<LoginPage> {
+class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
   bool _isObscure = true;
   final _formKey = GlobalKey<FormState>();
   var emailController = TextEditingController();
@@ -37,10 +37,22 @@ class _LoginPage extends State<LoginPage> {
   late SharedPreferences logindata;
   late bool newuser;
 
+  late AnimationController _animationController;
+  late Animation<double> _fadeInAnimation;
+
   @override
   void initState() {
     super.initState();
     init();
+    _animationController = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+    _fadeInAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeIn,
+    );
+    _animationController.forward();
   }
 
   init() async {
@@ -50,13 +62,12 @@ class _LoginPage extends State<LoginPage> {
 
   @override
   void dispose() {
-    // Clean up the controller when the widget is disposed.
     emailController.dispose();
     passwordController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
-  //Email Text Field and Password Field
   Widget _buildForm() {
     return Form(
       key: _formKey,
@@ -67,15 +78,10 @@ class _LoginPage extends State<LoginPage> {
             'Email',
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
-          const SizedBox(
-            height: defaultPadding,
-          ),
+          const SizedBox(height: defaultPadding),
           TextFormField(
             keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(
-              color: Colors.black,
-              fontFamily: 'OpenSans',
-            ),
+            style: const TextStyle(color: Colors.black, fontFamily: 'OpenSans'),
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please Enter Email';
@@ -90,10 +96,7 @@ class _LoginPage extends State<LoginPage> {
               filled: true,
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.only(top: 14.0),
-              prefixIcon: Icon(
-                Icons.email,
-                color: Colors.blue,
-              ),
+              prefixIcon: Icon(Icons.email, color: Colors.blue),
               hintText: 'Enter your Email',
               hintStyle: TextStyle(color: Colors.black38),
               errorStyle: TextStyle(fontSize: 15),
@@ -104,9 +107,7 @@ class _LoginPage extends State<LoginPage> {
             'Password',
             style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
           ),
-          const SizedBox(
-            height: defaultPadding,
-          ),
+          const SizedBox(height: defaultPadding),
           TextFormField(
             keyboardType: TextInputType.visiblePassword,
             validator: (value) {
@@ -118,28 +119,22 @@ class _LoginPage extends State<LoginPage> {
               return null;
             },
             obscureText: _isObscure,
-            style: const TextStyle(
-              color: Colors.black,
-              fontFamily: 'OpenSans',
-            ),
+            style: const TextStyle(color: Colors.black, fontFamily: 'OpenSans'),
             controller: passwordController,
             decoration: InputDecoration(
               suffixIcon: IconButton(
-                  icon: Icon(
-                      _isObscure ? Icons.visibility : Icons.visibility_off),
-                  onPressed: () {
-                    setState(() {
-                      _isObscure = !_isObscure;
-                    });
-                  }),
+                icon: Icon(_isObscure ? Icons.visibility : Icons.visibility_off),
+                onPressed: () {
+                  setState(() {
+                    _isObscure = !_isObscure;
+                  });
+                },
+              ),
               fillColor: Colors.white24,
               filled: true,
               border: const OutlineInputBorder(),
               contentPadding: const EdgeInsets.only(top: 14.0),
-              prefixIcon: const Icon(
-                Icons.lock,
-                color: Colors.blue,
-              ),
+              prefixIcon: const Icon(Icons.lock, color: Colors.blue),
               hintText: 'Enter your Password',
               hintStyle: const TextStyle(color: Colors.black38),
               errorStyle: const TextStyle(fontSize: 15),
@@ -150,14 +145,11 @@ class _LoginPage extends State<LoginPage> {
     );
   }
 
-  //Forget Password Text Button
   Widget _buildForgotPasswordBtn() {
     return Container(
       alignment: Alignment.centerRight,
       child: TextButton(
-        style: TextButton.styleFrom(
-          textStyle: const TextStyle(color: Colors.red),
-        ),
+        style: TextButton.styleFrom(textStyle: const TextStyle(color: Colors.red)),
         onPressed: () {
           Navigator.push(
             context,
@@ -170,19 +162,16 @@ class _LoginPage extends State<LoginPage> {
         },
         child: const Text(
           'Forgot Password?',
-          style: TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15.0),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15.0),
         ),
       ),
     );
   }
 
-  //Login Button
   Widget _buildLoginBtn() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 25.0),
       width: double.infinity,
-      // ignore: deprecated_member_use
       child: ElevatedButton(
         onPressed: () {
           if (_formKey.currentState!.validate()) {
@@ -190,7 +179,6 @@ class _LoginPage extends State<LoginPage> {
               email = emailController.text;
               password = passwordController.text;
             });
-            const CircularProgressIndicator();
             logindata.setBool('login', false);
             logindata.setString('email', email);
             logindata.setString('password', password);
@@ -198,12 +186,12 @@ class _LoginPage extends State<LoginPage> {
           }
         },
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.all(defaultPadding), backgroundColor: Colors.orange,
+          padding: const EdgeInsets.all(defaultPadding),
+          backgroundColor: Colors.orange,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30.0),
           ),
         ),
-
         child: const Text(
           'Sign In',
           style: TextStyle(
@@ -218,16 +206,12 @@ class _LoginPage extends State<LoginPage> {
     );
   }
 
-  //go to register text
   Widget _buildSignInWithText() {
     return const Column(
       children: <Widget>[
         Text(
           '-------------------- OR --------------------',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 20.0),
         Text(
@@ -238,7 +222,6 @@ class _LoginPage extends State<LoginPage> {
     );
   }
 
-  //go to register code
   Widget _buildSignupBtn() {
     return GestureDetector(
       onTap: () {
@@ -252,19 +235,11 @@ class _LoginPage extends State<LoginPage> {
           children: [
             TextSpan(
               text: 'Don\'t have an Account? ',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.black, fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
             TextSpan(
               text: 'Sign Up',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.black, fontSize: 18.0, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -289,91 +264,50 @@ class _LoginPage extends State<LoginPage> {
           logindata.setString(
               "name",
               "${event.snapshot.child("firstname").value} ${event.snapshot.child("lastname").value}");
-          print(event.snapshot.child("email").value.toString());
-          print(event.snapshot.child("type").value.toString());
-          print("${event.snapshot.child("firstname").value} ${event.snapshot.child("lastname").value}");
         });
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text(
-            "You Have Been Logged In Successfully!",
-          ),
+          content: const Text("You Have Been Logged In Successfully!"),
           backgroundColor: Colors.teal,
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
             label: 'Dismiss',
             disabledTextColor: Colors.white,
             textColor: Colors.yellow,
-            onPressed: () {
-              //Do whatever you want
-            },
+            onPressed: () {},
           ),
         ),
       );
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const MainPage(),
-        ),
+        MaterialPageRoute(builder: (context) => const MainPage()),
       );
     } on FirebaseAuthException catch (e) {
+      String errorMessage;
       if (e.code == 'user-not-found') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              "No User Found for that Email",
-            ),
-            backgroundColor: Colors.teal,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Dismiss',
-              disabledTextColor: Colors.white,
-              textColor: Colors.yellow,
-              onPressed: () {
-                //Do whatever you want
-              },
-            ),
-          ),
-        );
+        errorMessage = "No User Found for that Email";
       } else if (e.code == 'wrong-password') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              "Wrong Password Provided by You",
-            ),
-            backgroundColor: Colors.teal,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Dismiss',
-              disabledTextColor: Colors.white,
-              textColor: Colors.yellow,
-              onPressed: () {
-                //Do whatever you want
-              },
-            ),
-          ),
-        );
+        errorMessage = "Wrong Password Provided by You";
       } else if (e.code == 'wrong-email') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              "Wrong Email Provided by You",
-            ),
-            backgroundColor: Colors.teal,
-            behavior: SnackBarBehavior.floating,
-            action: SnackBarAction(
-              label: 'Dismiss',
-              disabledTextColor: Colors.white,
-              textColor: Colors.yellow,
-              onPressed: () {
-                //Do whatever you want
-              },
-            ),
-          ),
-        );
+        errorMessage = "Wrong Email Provided by You";
+      } else {
+        errorMessage = "An unknown error occurred";
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.teal,
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Dismiss',
+            disabledTextColor: Colors.white,
+            textColor: Colors.yellow,
+            onPressed: () {},
+          ),
+        ),
+      );
     }
   }
 
@@ -403,37 +337,38 @@ class _LoginPage extends State<LoginPage> {
                   ),
                 ),
               ),
-              // ignore: sized_box_for_whitespace
               Container(
                 height: double.infinity,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40.0,
-                    vertical: 120.0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontFamily: 'OpenSans',
-                          fontSize: 30.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: defaultPadding),
-                      _buildForm(),
-                      _buildForgotPasswordBtn(),
-                      _buildLoginBtn(),
-                      _buildSignInWithText(),
-                      const SizedBox(
-                        height: 30.0,
-                      ),
-                      _buildSignupBtn(),
-                    ],
+                  padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 120.0),
+                  child: FadeTransition(
+                    opacity: _fadeInAnimation,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            const Text(
+                              'Sign In',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontFamily: 'OpenSans',
+                                fontSize: 30.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: defaultPadding),
+                            _buildForm(),
+                            _buildForgotPasswordBtn(),
+                            _buildLoginBtn(),
+                            _buildSignInWithText(),
+                            const SizedBox(height: 30.0),
+                            _buildSignupBtn(),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               )

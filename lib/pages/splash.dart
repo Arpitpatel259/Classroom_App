@@ -15,7 +15,52 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
+
+    _animationController.forward();
+
+    Timer(const Duration(seconds: 3), () {
+      check_if_already_login();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void check_if_already_login() async {
+    SharedPreferences logindata = await SharedPreferences.getInstance();
+    bool newuser = (logindata.getBool('login') ?? true);
+    if (!newuser) {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => const MainPage()));
+    } else {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => const LoginPage()));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Container(
             decoration: const BoxDecoration(color: Colors.blueAccent),
           ),
-          const Column(
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Expanded(
@@ -34,23 +79,29 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.white,
-                      radius: 50.0,
-                      child: Icon(
-                        Icons.work,
-                        color: Colors.black,
-                        size: 50.0,
+                    ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: CircleAvatar(
+                        backgroundColor: Colors.white,
+                        radius: 50.0,
+                        child: Icon(
+                          Icons.work,
+                          color: Colors.black,
+                          size: 50.0,
+                        ),
                       ),
                     ),
                     Padding(padding: EdgeInsets.only(top: 10.0)),
-                    Text(
-                      "Wissme",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24.0,
-                          color: Colors.black),
-                    )
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Text(
+                        "Wissme",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24.0,
+                            color: Colors.black),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -59,34 +110,5 @@ class _SplashScreenState extends State<SplashScreen> {
         ],
       ),
     );
-  }
-
-  late SharedPreferences logindata;
-  late bool newuser;
-
-  @override
-  void initState() {
-    super.initState();
-
-    Timer(const Duration(seconds: 3),(){
-      check_if_already_login();
-    });
-  }
-
-  void check_if_already_login() async {
-    logindata = await SharedPreferences.getInstance();
-    newuser = (logindata.getBool('login') ?? true);
-    if (newuser == false) {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const MainPage()));
-    } else {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const LoginPage()));
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

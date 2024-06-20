@@ -28,7 +28,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     title: title,
-    theme: ThemeData(primarySwatch: Colors.blueGrey),
+    theme: ThemeData(
+      primarySwatch: Colors.blueGrey,
+      scaffoldBackgroundColor: Colors.blueGrey.shade50,
+    ),
     home: const NavigationDrawers(),
   );
 }
@@ -37,7 +40,6 @@ class NavigationDrawers extends StatefulWidget {
   const NavigationDrawers({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _NavigationDrawer createState() => _NavigationDrawer();
 }
 
@@ -63,9 +65,7 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     email = logindata.getString("email") ?? "";
     name = logindata.getString("name") ?? "";
     type = logindata.getString("type") ?? "";
-    setState(() {
-
-    });
+    setState(() {});
   }
 
   @override
@@ -77,7 +77,7 @@ class _NavigationDrawer extends State<NavigationDrawers> {
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
-        color: Colors.blue,
+        color: Colors.blueGrey.shade800,
         child: ListView(
           children: <Widget>[
             Container(
@@ -87,15 +87,19 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   const SizedBox(height: 15),
                   //buildSearchField(),
                   UserAccountsDrawerHeader(
-                    accountName: Text("Name : $name"),
-                    accountEmail: Text("Email : $email"),
+                    decoration: BoxDecoration(
+                      color: Colors.blueGrey.shade700,
+                    ),
+                    accountName: Text("Name: $name", style: const TextStyle(color: Colors.white)),
+                    accountEmail: Text("Email: $email", style: const TextStyle(color: Colors.white70)),
                     currentAccountPicture: CircleAvatar(
+                      backgroundColor: Colors.white,
                       child: ClipOval(
                         child: Image.network(
                           'https://picsum.photos/150/150',
                           fit: BoxFit.cover,
-                          width: 100,
-                          height: 100,
+                          width: 90,
+                          height: 90,
                         ),
                       ),
                     ),
@@ -108,7 +112,7 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   ),
                   const SizedBox(height: 24),
                   buildMenuItem(
-                    text: type.contains("Student")?"Teacher":"Student",
+                    text: type.contains("Student") ? "Teacher" : "Student",
                     icon: Icons.people,
                     onClicked: () => selectedItems(context, 1),
                   ),
@@ -140,12 +144,12 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     VoidCallback? onClicked,
   }) {
     const color = Colors.white;
-    const hovercolor = Colors.white70;
+    const hoverColor = Colors.white70;
 
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(text, style: const TextStyle(color: color)),
-      hoverColor: hovercolor,
+      hoverColor: hoverColor,
       onTap: onClicked,
     );
   }
@@ -156,21 +160,18 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     switch (index) {
       case 0:
         {
-          //Dashboard
           Navigator.pushReplacement(context,
               MaterialPageRoute(builder: (context) => const MainPage()));
           break;
         }
       case 1:
         {
-          //students
           Navigator.of(context).push(
               MaterialPageRoute(builder: (context) => const StudentClass()));
           break;
         }
       case 2:
         {
-          //about us firebase login
           Navigator.of(context).push(
               MaterialPageRoute(builder: (context) => const AboutUsPage()));
           break;
@@ -182,7 +183,7 @@ class _NavigationDrawer extends State<NavigationDrawers> {
             builder: (BuildContext context) => CupertinoAlertDialog(
               title: const Text('Alert'),
               content:
-              const Text('Are you sure? You Want Logout From This App!'),
+              const Text('Are you sure you want to logout from this app?'),
               actions: <Widget>[
                 TextButton(
                   onPressed: () async {
@@ -203,11 +204,12 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text('Cancle'),
+                  child: const Text('Cancel'),
                 ),
               ],
             ),
           );
+          break;
         }
     }
   }

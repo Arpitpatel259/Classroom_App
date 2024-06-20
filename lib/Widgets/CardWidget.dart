@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wissme/Model/DataModelPage.dart';
 import 'package:wissme/pages/EditAssignWork.dart';
-
 import '../main.dart';
 
 class CardWidget extends StatefulWidget {
@@ -31,17 +30,16 @@ class _CardWidgetState extends State<CardWidget> {
   }
 
   getData() async {
-    isLoading = true;
+    setState(() {
+      isLoading = true;
+    });
 
-      logindata = await SharedPreferences.getInstance();
-      type = logindata.getString("type") ?? "";
+    logindata = await SharedPreferences.getInstance();
+    type = logindata.getString("type") ?? "";
 
     await Firebase.initializeApp();
     FirebaseDatabase.instance.ref("workTitle").onValue.listen((snapshot) {
-      //print(snapshot.toString());
-      if (snapshot != null &&
-          snapshot.snapshot != null &&
-          snapshot.snapshot.children != null) {
+      if (snapshot.snapshot.exists) {
         list.clear();
         for (DataSnapshot snp in snapshot.snapshot.children) {
           list.add(DataModelPage(
@@ -70,18 +68,18 @@ class _CardWidgetState extends State<CardWidget> {
           Expanded(
             child: isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
+              child: CircularProgressIndicator(),
+            )
                 : list.isEmpty
-                    ? const Center(
-                        child: Text("No Work Found Here!"),
-                      )
-                    : ListView.builder(
-                        itemCount: list.length,
-                        itemBuilder: (context, index) {
-                          return getItemContainer(context, index);
-                        },
-                      ),
+                ? const Center(
+              child: Text("No Work Found Here!"),
+            )
+                : ListView.builder(
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                return getItemContainer(context, index);
+              },
+            ),
           ),
         ],
       ),
@@ -90,164 +88,123 @@ class _CardWidgetState extends State<CardWidget> {
 
   Widget getItemContainer(BuildContext context, int index) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        // Add your onTap functionality here
+      },
       child: Container(
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10),
-              topRight: Radius.circular(10),
-              bottomLeft: Radius.circular(10),
-              bottomRight: Radius.circular(10)),
+        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey.shade700,
+          borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey,
+              color: Colors.grey.withOpacity(0.5),
               spreadRadius: 3,
+              blurRadius: 5,
               offset: Offset(0, 3),
             ),
           ],
         ),
-        clipBehavior: Clip.antiAliasWithSaveLayer,
-        margin: EdgeInsets.only(
-            left: 10,
-            right: 10,
-            top: index == 0 ? 10 : 10,
-            bottom: index == list.length - 1 ? 10 : 5),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Positioned(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                  child: Text(
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
                     list[index].className,
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.w600),
                   ),
-                ),
-              ),
-              if(type.contains("Teacher"))
-              Positioned(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                  child: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      Navigator.push(
+                  if (type.contains("Teacher"))
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      onPressed: () {
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => EditAssignWork(
                               dataModelPage: list[index],
                             ),
-                          ));
-                    },
-                  ),
-                ),
+                          ),
+                        );
+                      },
+                    ),
+                ],
               ),
-            ]),
-            Positioned(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                child: Text(
-                  list[index].workTitle,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600),
-                ),
+              const SizedBox(height: 5),
+              Text(
+                list[index].workTitle,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
               ),
-            ),
-            Positioned(
-              child: Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                child: Text(
-                  list[index].workName,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600),
-                ),
+              const SizedBox(height: 5),
+              Text(
+                list[index].workName,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
               ),
-            ),
-            Positioned(
-              child: Padding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                child: Text(
-                  list[index].endTime,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600),
-                ),
+              const SizedBox(height: 5),
+              Text(
+                list[index].endTime,
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                  child: Text(
+              const SizedBox(height: 5),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
                     list[index].faculty,
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600),
+                        color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                   ),
-                ),
-                if(type.contains("Teacher"))
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                  child: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      showCupertinoDialog<String>(
-                        context: context,
-                        builder: (BuildContext context) => CupertinoAlertDialog(
-                          title: const Text('Alert'),
-                          content: const Text(
-                              'Are you sure? You Want To Delete This Work!'),
-                          actions: <Widget>[
-                            TextButton(
-                              onPressed: () async {
-                                final databaseRef =
-                                    FirebaseDatabase.instance.ref();
-                                databaseRef
-                                    .child("workTitle")
-                                    .child(list[index].key)
-                                    .remove();
-                                Navigator.pushReplacement(
+                  if (type.contains("Teacher"))
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.white),
+                      onPressed: () {
+                        showCupertinoDialog<String>(
+                          context: context,
+                          builder: (BuildContext context) => CupertinoAlertDialog(
+                            title: const Text('Alert'),
+                            content: const Text(
+                                'Are you sure? You Want To Delete This Work!'),
+                            actions: <Widget>[
+                              TextButton(
+                                onPressed: () async {
+                                  final databaseRef =
+                                  FirebaseDatabase.instance.ref();
+                                  await databaseRef
+                                      .child("workTitle")
+                                      .child(list[index].key)
+                                      .remove();
+                                  Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) =>
-                                            const MainPage()));
-                              },
-                              child: const Text('Ok'),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Cancle'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
+                                        builder: (context) => const MainPage()),
+                                  );
+                                },
+                                child: const Text('Ok'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

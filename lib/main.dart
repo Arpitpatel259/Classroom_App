@@ -31,8 +31,7 @@ class MyApp extends StatelessWidget {
   static const String title = 'WissMe';
 
   @override
-  Widget build(BuildContext context) =>
-      MaterialApp(
+  Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
         title: title,
         theme: ThemeData(primarySwatch: Colors.blue),
@@ -67,7 +66,7 @@ class _MainPageState extends State<MainPage> {
 
   getConnectivity() =>
       subscription = Connectivity().onConnectivityChanged.listen(
-            (ConnectivityResult result) async {
+        (ConnectivityResult result) async {
           isDeviceConnected = await InternetConnectionChecker().hasConnection;
           if (!isDeviceConnected && isAlertSet == false) {
             showDialogBox();
@@ -90,37 +89,51 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  showDialogBox() =>
-      showCupertinoDialog<String>(
+  showDialogBox() => showCupertinoDialog<String>(
         context: context,
-        builder: (BuildContext context) =>
-            CupertinoAlertDialog(
-              title: const Text('No Connection'),
-              content: const Text('Please check your internet connectivity'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () async {
-                    Navigator.pop(context, 'Cancel');
-                    setState(() => isAlertSet = false);
-                    isDeviceConnected =
+        builder: (BuildContext context) => CupertinoAlertDialog(
+          title: const Text('No Connection'),
+          content: const Text('Please check your internet connectivity'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context, 'Cancel');
+                setState(() => isAlertSet = false);
+                isDeviceConnected =
                     await InternetConnectionChecker().hasConnection;
-                    if (!isDeviceConnected && isAlertSet == false) {
-                      showDialogBox();
-                      setState(() => isAlertSet = true);
-                    }
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
+                if (!isDeviceConnected && isAlertSet == false) {
+                  showDialogBox();
+                  setState(() => isAlertSet = true);
+                }
+              },
+              child: const Text('OK'),
             ),
+          ],
+        ),
       );
 
   @override
-  Widget build(BuildContext context) =>
-      Scaffold(
+  Widget build(BuildContext context) => Scaffold(
         drawer: const NavigationDrawers(),
         appBar: AppBar(
-          title: const Text(MyApp.title),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Text(
+                MyApp.title,
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.purple],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
         ),
         body: RefreshIndicator(
           child: CardWidget(),
@@ -130,16 +143,17 @@ class _MainPageState extends State<MainPage> {
             });
           },
         ),
-        floatingActionButton: type.contains("Teacher") ?
-        FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AssignWork()),
-            );
-          },
-          backgroundColor: Colors.blue,
-          child: const Icon(Icons.add),
-        ) : Container()
+        floatingActionButton: type.contains("Teacher")
+            ? FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AssignWork()),
+                  );
+                },
+                backgroundColor: Colors.blue,
+                child: const Icon(Icons.add),
+              )
+            : Container(),
       );
 }
