@@ -1,31 +1,32 @@
-// ignore_for_file: unnecessary_null_comparison
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wissme/Model/studentDataModel.dart';
+import '../DataBase Work/InsertData.dart';
+import '../Model/comWorkModelPage.dart';
+import 'PDFViewerScreen.dart';
 
-import '../main.dart';
-
-class StudentClass extends StatefulWidget {
-  const StudentClass({Key? key}) : super(key: key);
+class showAll_work extends StatefulWidget {
+  const showAll_work({super.key});
 
   @override
-  State<StudentClass> createState() => _StudentClassState();
+  State<showAll_work> createState() => _showAll_workState();
 }
 
-class _StudentClassState extends State<StudentClass> {
+class _showAll_workState extends State<showAll_work> {
   bool isLoading = false;
-  List<studentDataModel> list = [];
+  List<comWorkModelPage> list = [];
 
   var type = "";
   late SharedPreferences logindata;
+  String fileName = '';
 
   @override
   void initState() {
     super.initState();
     getData();
+    String key = databaseRef.child("submitted_work").push().key ?? "";
   }
 
   getData() async {
@@ -34,30 +35,28 @@ class _StudentClassState extends State<StudentClass> {
     });
 
     logindata = await SharedPreferences.getInstance();
+    String userId = logindata.getString("userId") ?? "";
     type = logindata.getString("type") ?? "";
 
     await Firebase.initializeApp();
-    FirebaseDatabase.instance.ref("userSignUp").onValue.listen((snapshot) {
-      if (snapshot != null &&
-          snapshot.snapshot != null &&
-          snapshot.snapshot.children != null) {
+
+    // Submitted By Personal User
+    FirebaseDatabase.instance
+        .ref("submitted_work")
+        .child(userId)
+        .onValue
+        .listen((snapshot) {
+      if (snapshot.snapshot.exists) {
         list.clear();
         for (DataSnapshot snp in snapshot.snapshot.children) {
-          if (snp
-              .child("type")
-              .value
-              .toString()
-              .contains(type.contains("Student") ? "Teacher" : "Student")) {
-            list.add(studentDataModel(
-              key: snp.key.toString(),
-              firstname: snp.child("firstname").value.toString(),
-              lastname: snp.child("lastname").value.toString(),
-              mobile: snp.child("mobile").value.toString(),
-              unique_id: snp.child("unique id").value.toString(),
-              type: snp.child("type").value.toString(),
-              email: snp.child("email").value.toString(),
-            ));
-          }
+          list.add(comWorkModelPage(
+            key: snp.key.toString(),
+            work_class: snp.child("work_class").value.toString(),
+            name: snp.child("name").value.toString(),
+            timestamp: snp.child("timestamp").value.toString(),
+            work_title: snp.child("work_title").value.toString(),
+            filename: snp.child("filename").value.toString(),
+          ));
         }
       }
       setState(() {
@@ -68,25 +67,11 @@ class _StudentClassState extends State<StudentClass> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-        onWillPop: () async {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const MainPage()),
-                (Route<dynamic> route) => false,
-          );
-          return false;
-        },
-    child: Scaffold(
+    return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Text(
-              type.contains("Student") ? "Teacher" : "Student",
-              style: TextStyle(color: Colors.white),
-            ),
-          ],
+        title: const Text(
+          "All Work",
+          style: TextStyle(color: Colors.white),
         ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(
@@ -98,40 +83,37 @@ class _StudentClassState extends State<StudentClass> {
           ),
         ),
       ),
-      body: Container(
-        margin: const EdgeInsets.all(5),
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: Column(
-          children: [
-            Expanded(
-              child: isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(),
-                    )
-                  : list.isEmpty
-                      ? const Center(
-                          child: Text("No Student Found Here!"),
-                        )
-                      : ListView.builder(
-                          itemCount: list.length,
-                          itemBuilder: (context, index) {
-                            return getItemContainer(context, index);
-                          },
-                        ),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : Container(
+              margin: const EdgeInsets.all(5),
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: list.isEmpty
+                        ? const Center(
+                            child: Text("No Work Submitted Yet!"),
+                          )
+                        : ListView.builder(
+                            itemCount: list.length,
+                            itemBuilder: (context, index) {
+                              return getItemContainer(context, index);
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
-    ),
     );
   }
 
   Widget getItemContainer(BuildContext context, int index) {
     return GestureDetector(
-      onTap: () {
-        // Handle tap event
-      },
+      onTap: () {}, // Call openPDF on tap
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -163,7 +145,7 @@ class _StudentClassState extends State<StudentClass> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Name: ${list[index].firstname} ${list[index].lastname}",
+                "Name: ${list[index].name}",
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -180,11 +162,11 @@ class _StudentClassState extends State<StudentClass> {
                   ),
                   children: [
                     const TextSpan(
-                      text: 'Unique Id: ',
+                      text: 'Classname: ',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextSpan(
-                      text: list[index].unique_id,
+                      text: list[index].work_class,
                       style: const TextStyle(fontWeight: FontWeight.normal),
                     ),
                   ],
@@ -200,11 +182,11 @@ class _StudentClassState extends State<StudentClass> {
                   ),
                   children: [
                     const TextSpan(
-                      text: 'Mobile No: ',
+                      text: 'Work Title: ',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextSpan(
-                      text: list[index].mobile,
+                      text: list[index].work_title,
                       style: const TextStyle(fontWeight: FontWeight.normal),
                     ),
                   ],
@@ -220,15 +202,59 @@ class _StudentClassState extends State<StudentClass> {
                   ),
                   children: [
                     const TextSpan(
-                      text: 'Email Id: ',
+                      text: 'Time: ',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextSpan(
-                      text: list[index].email,
+                      text: list[index].timestamp,
                       style: const TextStyle(fontWeight: FontWeight.normal),
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: RichText(
+                      overflow: TextOverflow.ellipsis, // Handle text overflow
+                      maxLines: 1, // Limit to one line
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'File: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: list[index].filename,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.normal),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10), // Adjust the width as needed
+                  ElevatedButton(
+                    onPressed: () {
+                      // Your button action here
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              PDFViewerScreen(fileName: list[index].filename),
+                        ),
+                      );
+                    },
+                    child: const Text('Open'),
+                  ),
+                ],
               ),
             ],
           ),

@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   children: [
                     ScaleTransition(
                       scale: _scaleAnimation,
-                      child: CircleAvatar(
+                      child: const CircleAvatar(
                         backgroundColor: Colors.white,
                         radius: 50.0,
                         child: Icon(
@@ -91,10 +91,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         ),
                       ),
                     ),
-                    Padding(padding: EdgeInsets.only(top: 10.0)),
+                    const Padding(padding: EdgeInsets.only(top: 10.0)),
                     FadeTransition(
                       opacity: _fadeAnimation,
-                      child: Text(
+                      child: const Text(
                         "Wissme",
                         style: TextStyle(
                             fontWeight: FontWeight.bold,

@@ -123,7 +123,8 @@ class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
             controller: passwordController,
             decoration: InputDecoration(
               suffixIcon: IconButton(
-                icon: Icon(_isObscure ? Icons.visibility : Icons.visibility_off),
+                icon:
+                    Icon(_isObscure ? Icons.visibility : Icons.visibility_off),
                 onPressed: () {
                   setState(() {
                     _isObscure = !_isObscure;
@@ -149,7 +150,8 @@ class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
     return Container(
       alignment: Alignment.centerRight,
       child: TextButton(
-        style: TextButton.styleFrom(textStyle: const TextStyle(color: Colors.red)),
+        style:
+            TextButton.styleFrom(textStyle: const TextStyle(color: Colors.red)),
         onPressed: () {
           Navigator.push(
             context,
@@ -162,7 +164,8 @@ class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
         },
         child: const Text(
           'Forgot Password?',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15.0),
+          style: TextStyle(
+              fontWeight: FontWeight.bold, color: Colors.black, fontSize: 15.0),
         ),
       ),
     );
@@ -235,11 +238,17 @@ class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
           children: [
             TextSpan(
               text: 'Don\'t have an Account? ',
-              style: TextStyle(color: Colors.black, fontSize: 18.0, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold),
             ),
             TextSpan(
               text: 'Sign Up',
-              style: TextStyle(color: Colors.black, fontSize: 18.0, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -257,13 +266,27 @@ class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
             .ref("userSignUp/${userCredential.user!.uid}")
             .onValue
             .listen((event) {
+          // Name
+          logindata.setString("name",
+              "${event.snapshot.child("firstname").value} ${event.snapshot.child("lastname").value}");
+          // Email
           logindata.setString(
               "email", event.snapshot.child("email").value.toString());
+          //organization
+          logindata.setString("organization",
+              event.snapshot.child("organization").value.toString());
+          // type
           logindata.setString(
               "type", event.snapshot.child("type").value.toString());
+          //mobile no
           logindata.setString(
-              "name",
-              "${event.snapshot.child("firstname").value} ${event.snapshot.child("lastname").value}");
+              "mobile", event.snapshot.child("mobile").value.toString());
+          //mobile no
+          logindata.setString(
+              "userId", event.snapshot.child("id").value.toString());
+          // enrollment
+          logindata.setString(
+              "enrollment", event.snapshot.child("unique id").value.toString());
         });
       }
 
@@ -341,7 +364,8 @@ class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
                 height: double.infinity,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 120.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 40.0, vertical: 120.0),
                   child: FadeTransition(
                     opacity: _fadeInAnimation,
                     child: LayoutBuilder(

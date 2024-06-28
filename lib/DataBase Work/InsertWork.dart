@@ -12,16 +12,13 @@ var endTimeController = TextEditingController();
 var facultyController = TextEditingController();
 
 void insertDataForWork(
-    String classname,
-    String worktitle,
-    String workname,
-    String endtime,
-    String faculty,) {
-  String? key =
-      databaseRef
-          .child("workTitle")
-          .push()
-          .key;
+  String classname,
+  String worktitle,
+  String workname,
+  String endtime,
+  String faculty,
+) {
+  String? key = databaseRef.child("workTitle").push().key;
   databaseRef.child("workTitle").child(key!).set({
     'id': key,
     'classname': classname,
@@ -29,8 +26,10 @@ void insertDataForWork(
     'workname': workname,
     'endtime': endtime,
     'faculty': faculty,
+    'isSubmit': false, // Default value for isSubmit field
   });
 
+  // Clear controllers after inserting data
   classController.clear();
   workTitleController.clear();
   workNameController.clear();
@@ -39,12 +38,13 @@ void insertDataForWork(
 }
 
 void updateDataForWork(
-    String key,
-    String classname,
-    String worktitle,
-    String workname,
-    String endtime,
-    String faculty,) {
+  String key,
+  String classname,
+  String worktitle,
+  String workname,
+  String endtime,
+  String faculty,
+) {
   databaseRef.child("workTitle").child(key).set({
     'id': key,
     'classname': classname,

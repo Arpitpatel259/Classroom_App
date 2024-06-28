@@ -1,14 +1,14 @@
-// ignore_for_file: use_build_context_synchronously, non_constant_identifier_names
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wissme/main.dart';
 import 'package:wissme/pages/about_us_page.dart';
+import 'package:wissme/pages/complete_work.dart';
 import 'package:wissme/pages/people_page.dart';
 
 import '../Authentication/LoginAuth.dart';
+import '../pages/setting_app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,14 +26,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    debugShowCheckedModeBanner: false,
-    title: title,
-    theme: ThemeData(
-      primarySwatch: Colors.blueGrey,
-      scaffoldBackgroundColor: Colors.blueGrey.shade50,
-    ),
-    home: const NavigationDrawers(),
-  );
+        debugShowCheckedModeBanner: false,
+        title: title,
+        theme: ThemeData(
+          primarySwatch: Colors.blueGrey,
+          scaffoldBackgroundColor: Colors.blueGrey.shade50,
+        ),
+        home: const NavigationDrawers(),
+      );
 }
 
 class NavigationDrawers extends StatefulWidget {
@@ -52,9 +52,11 @@ class _NavigationDrawer extends State<NavigationDrawers> {
   var email = "";
   var name = "";
   var type = "";
+  var userId = "";
+  var pImage = "";
 
   @override
-  void initState()  {
+  void initState() {
     super.initState();
     init();
   }
@@ -65,6 +67,8 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     email = logindata.getString("email") ?? "";
     name = logindata.getString("name") ?? "";
     type = logindata.getString("type") ?? "";
+    userId = logindata.getString("userId") ?? "";
+    pImage = logindata.getString("profileImageUrl") ?? "";
     setState(() {});
   }
 
@@ -77,7 +81,13 @@ class _NavigationDrawer extends State<NavigationDrawers> {
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
-        color: Colors.blueGrey.shade800,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueAccent, Colors.blueGrey],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         child: ListView(
           children: <Widget>[
             Container(
@@ -85,21 +95,82 @@ class _NavigationDrawer extends State<NavigationDrawers> {
               child: Column(
                 children: [
                   const SizedBox(height: 15),
-                  //buildSearchField(),
                   UserAccountsDrawerHeader(
-                    decoration: BoxDecoration(
-                      color: Colors.blueGrey.shade700,
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent,
                     ),
-                    accountName: Text("Name: $name", style: const TextStyle(color: Colors.white)),
-                    accountEmail: Text("Email: $email", style: const TextStyle(color: Colors.white70)),
-                    currentAccountPicture: CircleAvatar(
-                      backgroundColor: Colors.white,
-                      child: ClipOval(
-                        child: Image.network(
-                          'https://picsum.photos/150/150',
-                          fit: BoxFit.cover,
-                          width: 90,
-                          height: 90,
+                    accountName: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'SF Pro',
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'Welcome, ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: name,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.normal,
+                                fontFamily: 'SF Pro'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    accountEmail: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'CustomFont',
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'Email: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: email,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.normal,
+                                fontFamily: 'SF Pro'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    currentAccountPicture: GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) => _buildProfileModal(context),
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                        );
+                      },
+                      child: Hero(
+                        tag: 'profile-picture',
+                        child: CircleAvatar(
+                          backgroundColor: Colors.redAccent,
+                          radius: 50,
+                          child: ClipOval(
+                            child: pImage.isNotEmpty
+                                ? Image.network(
+                                    pImage,
+                                    fit: BoxFit.cover,
+                                    width: 100,
+                                    height: 100,
+                                  )
+                                : const Icon(
+                                    Icons.account_circle,
+                                    size: 100,
+                                    color: Colors.white,
+                                  ),
+                          ),
                         ),
                       ),
                     ),
@@ -107,26 +178,55 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   const SizedBox(height: 24),
                   buildMenuItem(
                     text: 'DashBoard',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
                     icon: Icons.home,
                     onClicked: () => selectedItems(context, 0),
                   ),
                   const SizedBox(height: 24),
                   buildMenuItem(
                     text: type.contains("Student") ? "Teacher" : "Student",
+                    style: const TextStyle(
+                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
                     icon: Icons.people,
                     onClicked: () => selectedItems(context, 1),
                   ),
                   const SizedBox(height: 24),
+                  type.contains("Student")
+                      ? buildMenuItem(
+                          text: 'Completed Work',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.normal,
+                              fontFamily: 'SF Pro'),
+                          icon: Icons.work_history,
+                          onClicked: () => selectedItems(context, 2),
+                        )
+                      : const SizedBox(width: 24),
+                  type.contains("Student")
+                      ? const SizedBox(height: 24)
+                      : const SizedBox(width: 24),
+                  buildMenuItem(
+                    text: 'Setting',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
+                    icon: Icons.settings,
+                    onClicked: () => selectedItems(context, 3),
+                  ),
+                  const SizedBox(height: 24),
                   buildMenuItem(
                     text: 'About Us',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
                     icon: Icons.info_outline,
-                    onClicked: () => selectedItems(context, 2),
+                    onClicked: () => selectedItems(context, 4),
                   ),
                   const SizedBox(height: 24),
                   buildMenuItem(
                     text: 'Logout',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
                     icon: Icons.logout_sharp,
-                    onClicked: () => selectedItems(context, 3),
+                    onClicked: () => selectedItems(context, 5),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -142,6 +242,7 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     required String text,
     required IconData icon,
     VoidCallback? onClicked,
+    required TextStyle style,
   }) {
     const color = Colors.white;
     const hoverColor = Colors.white70;
@@ -173,17 +274,29 @@ class _NavigationDrawer extends State<NavigationDrawers> {
       case 2:
         {
           Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const AboutUsPage()));
+              MaterialPageRoute(builder: (context) => const complete_work()));
           break;
         }
       case 3:
+        {
+          Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const SettingPage()));
+          break;
+        }
+      case 4:
+        {
+          Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const AboutUsPage()));
+          break;
+        }
+      case 5:
         {
           showCupertinoDialog<String>(
             context: context,
             builder: (BuildContext context) => CupertinoAlertDialog(
               title: const Text('Alert'),
               content:
-              const Text('Are you sure you want to logout from this app?'),
+                  const Text('Are you sure you want to logout from this app?'),
               actions: <Widget>[
                 TextButton(
                   onPressed: () async {
@@ -214,6 +327,35 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     }
   }
 
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Widget _buildProfileModal(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pop(),
+      child: Container(
+        color: Colors.black.withOpacity(0.5),
+        child: Center(
+          child: Hero(
+            tag: 'profile-picture',
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeIn,
+              child: ClipOval(
+                child: pImage.isNotEmpty
+                    ? Image.network(
+                        pImage,
+                        fit: BoxFit.cover,
+                        width: 300,
+                        height: 300,
+                      )
+                    : const Icon(
+                        Icons.account_circle,
+                        size: 300,
+                        color: Colors.white,
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

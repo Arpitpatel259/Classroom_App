@@ -114,11 +114,11 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        drawer: const NavigationDrawers(),
+        drawer: NavigationDrawers(),
         appBar: AppBar(
           title: Row(
             mainAxisAlignment: MainAxisAlignment.start,
-            children: [
+            children: const [
               Text(
                 MyApp.title,
                 style: TextStyle(color: Colors.white),
@@ -128,7 +128,7 @@ class _MainPageState extends State<MainPage> {
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.blue, Colors.purple],
+                colors: const [Colors.blueAccent, Colors.blueAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

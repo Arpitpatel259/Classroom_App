@@ -1,170 +1,147 @@
-// ignore_for_file: unnecessary_null_comparison
-
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:wissme/Model/AboutDataModel.dart';
+
+import '../main.dart';
 
 class AboutUsPage extends StatefulWidget {
-  const AboutUsPage({Key? key}) : super(key: key);
+  const AboutUsPage({super.key});
 
   @override
   State<AboutUsPage> createState() => _AboutUsPageState();
 }
 
 class _AboutUsPageState extends State<AboutUsPage> {
-  bool isLoading = false;
-  List<AboutDataModel> list = [];
-
-  @override
-  void initState() {
-    super.initState();
-    getData();
-  }
-
-  getData() async {
-    isLoading = true;
-
-    await Firebase.initializeApp();
-    FirebaseDatabase.instance
-        .ref("Project_Participate")
-        .onValue
-        .listen((snapshot) {
-      if (snapshot != null &&
-          snapshot.snapshot != null &&
-          snapshot.snapshot.children != null) {
-        list.clear();
-        for (DataSnapshot snp in snapshot.snapshot.children) {
-          list.add(AboutDataModel(
-            key: snp.key.toString(),
-            name: snp.child("name").value.toString(),
-            email: snp.child("email").value.toString(),
-            enrollment: snp.child("enrollment").value.toString(),
-          ));
-        }
-      }
-      setState(() {
-        isLoading = false;
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Text(
-              "About Us",
-              style: TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue, Colors.purple],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage()),
+          (Route<dynamic> route) => false,
+        );
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xffffffff),
+        appBar: AppBar(
+          title: const Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Text(
+                "Assign Work",
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blueAccent, Colors.blueAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
           ),
         ),
-      ),
-      body: Container(
-        margin: const EdgeInsets.only(left: 5, top: 5, right: 5, bottom: 5),
-        width: MediaQuery.of(context).size.width,
-        height: MediaQuery.of(context).size.height,
-        child: Column(
-          children: [
-            Expanded(
-              child: isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(),
-                    )
-                  : list.isEmpty
-                      ? const Center(
-                          child: Text("No Data Found Here!"),
-                        )
-                      : ListView.builder(
-                          itemCount: list.length,
-                          itemBuilder: (context, index) {
-                            return getItemContainer(context, index);
-                          },
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Card(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 16),
+                Center(
+                  child: AnimatedContainer(
+                    duration: const Duration(seconds: 1),
+                    curve: Curves.easeInOut,
+                    height: 120,
+                    width: 120,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 5,
                         ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      "./assets/images/img_arpit_182.jpg",
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Center(
+                  child: Text(
+                    "Arpit Vekariya",
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.clip,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontStyle: FontStyle.normal,
+                      fontSize: 24,
+                      color: Color(0xff000000),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Center(
+                  child: Text(
+                    "Flutter Developer",
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.clip,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.normal,
+                      fontSize: 18,
+                      color: Color(0xff3a57e8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                buildInfoRow(
+                    Icons.web, "Website", "http://arpit-blog.epizy.com"),
+                buildInfoRow(Icons.phone, "Contact No", "+91 9265032740"),
+                buildInfoRow(Icons.email, "Email", "aj.vekariya123@gmail.com"),
+                buildInfoRow(
+                    Icons.code, "GitHub", "https://github.com/Arpitpatel259"),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget getItemContainer(BuildContext context, int index) {
-    return InkWell(
-      onTap: () {},
-      child: Container(
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10),
-              topRight: Radius.circular(10),
-              bottomLeft: Radius.circular(10),
-              bottomRight: Radius.circular(10)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey,
-              spreadRadius: 4,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAliasWithSaveLayer,
-        margin: EdgeInsets.only(
-            left: 10,
-            right: 10,
-            top: index == 0 ? 10 : 10,
-            bottom: index == list.length - 1 ? 10 : 5),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Center(
+        child: Row(
           children: [
-            Positioned(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                child: Text(
-                  list[index].name,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600),
-                ),
-              ),
+            const SizedBox(width: 16),
+            Icon(
+              icon,
+              color: const Color(0xff3a57e8),
+              size: 24,
             ),
-            Positioned(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                child: Text(
-                  list[index].enrollment,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w400,
+                  fontStyle: FontStyle.normal,
+                  fontSize: 16,
+                  color: Color(0xff000000),
                 ),
-              ),
-            ),
-            Positioned(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                child: Text(
-                  list[index].email,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600),
-                ),
+                textAlign: TextAlign.start,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
