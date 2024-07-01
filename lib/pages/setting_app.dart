@@ -117,17 +117,8 @@ class _SettingPageState extends State<SettingPage> {
                               ? FileImage(_imageFile!)
                               : (profileImageUrl.isNotEmpty
                               ? NetworkImage(profileImageUrl)
-                              : AssetImage('assets/images/app_icon.png')
+                              : AssetImage('assets/images/logo.png')
                           as ImageProvider),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Edit Photo',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.blue,
-                          fontFamily: 'CustomFont',
                         ),
                       ),
                       const SizedBox(height: 20),

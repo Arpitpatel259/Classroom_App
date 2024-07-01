@@ -61,20 +61,16 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     init();
   }
 
-  init() async {
+  Future<void> init() async {
     logindata = await SharedPreferences.getInstance();
-    newuser = (logindata.getBool('login') ?? false);
-    email = logindata.getString("email") ?? "";
-    name = logindata.getString("name") ?? "";
-    type = logindata.getString("type") ?? "";
-    userId = logindata.getString("userId") ?? "";
-    pImage = logindata.getString("profileImageUrl") ?? "";
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+    setState(() {
+      newuser = (logindata.getBool('login') ?? false);
+      email = logindata.getString("email") ?? "";
+      name = logindata.getString("name") ?? "";
+      type = logindata.getString("type") ?? "";
+      userId = logindata.getString("userId") ?? "";
+      pImage = logindata.getString("profileImageUrl") ?? "";
+    });
   }
 
   @override
@@ -115,8 +111,9 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                           TextSpan(
                             text: name,
                             style: const TextStyle(
-                                fontWeight: FontWeight.normal,
-                                fontFamily: 'SF Pro'),
+                              fontWeight: FontWeight.normal,
+                              fontFamily: 'SF Pro',
+                            ),
                           ),
                         ],
                       ),
@@ -137,8 +134,9 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                           TextSpan(
                             text: email,
                             style: const TextStyle(
-                                fontWeight: FontWeight.normal,
-                                fontFamily: 'SF Pro'),
+                              fontWeight: FontWeight.normal,
+                              fontFamily: 'SF Pro',
+                            ),
                           ),
                         ],
                       ),
@@ -155,7 +153,6 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                       child: Hero(
                         tag: 'profile-picture',
                         child: CircleAvatar(
-                          backgroundColor: Colors.redAccent,
                           radius: 50,
                           child: ClipOval(
                             child: pImage.isNotEmpty
@@ -165,10 +162,16 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                                     width: 100,
                                     height: 100,
                                   )
-                                : const Icon(
-                                    Icons.account_circle,
-                                    size: 100,
-                                    color: Colors.white,
+                                : Container(
+                                    width: 100,
+                                    height: 100,
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.account_circle,
+                                        size: 72, // adjust size as needed
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                           ),
                         ),
@@ -179,7 +182,9 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   buildMenuItem(
                     text: 'DashBoard',
                     style: const TextStyle(
-                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
+                      fontWeight: FontWeight.normal,
+                      fontFamily: 'SF Pro',
+                    ),
                     icon: Icons.home,
                     onClicked: () => selectedItems(context, 0),
                   ),
@@ -187,7 +192,9 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   buildMenuItem(
                     text: type.contains("Student") ? "Teacher" : "Student",
                     style: const TextStyle(
-                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
+                      fontWeight: FontWeight.normal,
+                      fontFamily: 'SF Pro',
+                    ),
                     icon: Icons.people,
                     onClicked: () => selectedItems(context, 1),
                   ),
@@ -196,19 +203,22 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                       ? buildMenuItem(
                           text: 'Completed Work',
                           style: const TextStyle(
-                              fontWeight: FontWeight.normal,
-                              fontFamily: 'SF Pro'),
+                            fontWeight: FontWeight.normal,
+                            fontFamily: 'SF Pro',
+                          ),
                           icon: Icons.work_history,
                           onClicked: () => selectedItems(context, 2),
                         )
-                      : const SizedBox(width: 24),
+                      : const SizedBox(),
                   type.contains("Student")
                       ? const SizedBox(height: 24)
-                      : const SizedBox(width: 24),
+                      : const SizedBox(),
                   buildMenuItem(
                     text: 'Setting',
                     style: const TextStyle(
-                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
+                      fontWeight: FontWeight.normal,
+                      fontFamily: 'SF Pro',
+                    ),
                     icon: Icons.settings,
                     onClicked: () => selectedItems(context, 3),
                   ),
@@ -216,7 +226,9 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   buildMenuItem(
                     text: 'About Us',
                     style: const TextStyle(
-                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
+                      fontWeight: FontWeight.normal,
+                      fontFamily: 'SF Pro',
+                    ),
                     icon: Icons.info_outline,
                     onClicked: () => selectedItems(context, 4),
                   ),
@@ -224,7 +236,9 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   buildMenuItem(
                     text: 'Logout',
                     style: const TextStyle(
-                        fontWeight: FontWeight.normal, fontFamily: 'SF Pro'),
+                      fontWeight: FontWeight.normal,
+                      fontFamily: 'SF Pro',
+                    ),
                     icon: Icons.logout_sharp,
                     onClicked: () => selectedItems(context, 5),
                   ),
@@ -261,32 +275,38 @@ class _NavigationDrawer extends State<NavigationDrawers> {
     switch (index) {
       case 0:
         {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => const MainPage()));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainPage()),
+          );
           break;
         }
       case 1:
         {
           Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const StudentClass()));
+            MaterialPageRoute(builder: (context) => const StudentClass()),
+          );
           break;
         }
       case 2:
         {
           Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const complete_work()));
+            MaterialPageRoute(builder: (context) => const complete_work()),
+          );
           break;
         }
       case 3:
         {
           Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const SettingPage()));
+            MaterialPageRoute(builder: (context) => const SettingPage()),
+          );
           break;
         }
       case 4:
         {
           Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const AboutUsPage()));
+            MaterialPageRoute(builder: (context) => const AboutUsPage()),
+          );
           break;
         }
       case 5:
@@ -299,6 +319,13 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                   const Text('Are you sure you want to logout from this app?'),
               actions: <Widget>[
                 TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  child: const Text('Ok'),
                   onPressed: () async {
                     logindata.setBool('login', true);
                     logindata.remove("email");
@@ -311,13 +338,6 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                       ),
                     );
                   },
-                  child: const Text('Ok'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel'),
                 ),
               ],
             ),
@@ -348,7 +368,7 @@ class _NavigationDrawer extends State<NavigationDrawers> {
                       )
                     : const Icon(
                         Icons.account_circle,
-                        size: 300,
+                        size: 250,
                         color: Colors.white,
                       ),
               ),
