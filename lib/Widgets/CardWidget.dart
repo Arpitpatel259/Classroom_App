@@ -92,14 +92,7 @@ class _CardWidgetState extends State<CardWidget> {
   Widget getItemContainer(BuildContext context, int index) {
     return InkWell(
       onTap: () {
-        if (type.contains("Teacher")) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => showAll_work(),
-            ),
-          );
-        } else if (type.contains("Student")) {
+        if (type.contains("Student")) {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -228,7 +221,6 @@ class _CardWidgetState extends State<CardWidget> {
                                 },
                                 child: const Text('Ok'),
                               ),
-
                             ],
                           ),
                         );

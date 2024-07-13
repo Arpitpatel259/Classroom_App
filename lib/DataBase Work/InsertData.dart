@@ -26,11 +26,6 @@ void insertDataRegister(
     String type,
     String password,
     String cPassword) {
-  /*String? key =
-      databaseRef
-          .child("userSignUp")
-          .push()
-          .key;*/
   databaseRef.child("userSignUp").child(id).set({
     'id': id,
     'firstname': firstname,
