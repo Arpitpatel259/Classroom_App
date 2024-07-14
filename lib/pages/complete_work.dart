@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../DataBase Work/InsertData.dart';
 import '../Model/comWorkModelPage.dart';
-import 'PDFViewerScreen.dart';
 
 class complete_work extends StatefulWidget {
   const complete_work({super.key});
@@ -236,48 +235,27 @@ class _complete_workState extends State<complete_work> {
                 ),
               ),
               const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: RichText(
-                      overflow: TextOverflow.ellipsis, // Handle text overflow
-                      maxLines: 1, // Limit to one line
-                      text: TextSpan(
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        children: [
-                          const TextSpan(
-                            text: 'File: ',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(
-                            text: list[index].filename,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.normal),
-                          ),
-                        ],
-                      ),
+              RichText(
+                // overflow: TextOverflow.ellipsis, // Handle text overflow
+                // maxLines: 1, // Limit to one line
+                text: TextSpan(
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  children: [
+                    const TextSpan(
+                      text: 'File: ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  const SizedBox(width: 10), // Adjust the width as needed
-                  ElevatedButton(
-                    onPressed: () {
-                      // Your button action here
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              PDFViewerScreen(fileName: list[index].filename),
-                        ),
-                      );
-                    },
-                    child: const Text('Open'),
-                  ),
-                ],
+                    TextSpan(
+                      text: list[index].filename,
+                      style:
+                      const TextStyle(fontWeight: FontWeight.normal),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

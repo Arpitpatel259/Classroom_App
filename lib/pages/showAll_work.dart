@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../DataBase Work/InsertData.dart';
 import '../Model/comWorkModelPage.dart';
-import 'PDFViewerScreen.dart';
 
 class showAll_work extends StatefulWidget {
   const showAll_work({super.key});
@@ -240,20 +239,7 @@ class _showAll_workState extends State<showAll_work> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10), // Adjust the width as needed
-                  ElevatedButton(
-                    onPressed: () {
-                      // Your button action here
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              PDFViewerScreen(fileName: list[index].filename),
-                        ),
-                      );
-                    },
-                    child: const Text('Open'),
-                  ),
+                  const SizedBox(width: 10), // Adjust the width as neede
                 ],
               ),
             ],

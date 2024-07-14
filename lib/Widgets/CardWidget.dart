@@ -21,31 +21,55 @@ class CardWidget extends StatefulWidget {
 
 class _CardWidgetState extends State<CardWidget> {
   List<DataModelPage> list = [];
+  List<String> submittedWorkIdList = [];
 
   bool isLoading = false;
   late SharedPreferences logindata;
   var type = "";
+  var userId = "";
 
   @override
   void initState() {
     super.initState();
-    getData();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      getData();
+    });
   }
 
   getData() async {
+    logindata = await SharedPreferences.getInstance();
+    type = (await SharedPreferences.getInstance()).getString("type") ?? "";
+    userId = (await SharedPreferences.getInstance()).getString("userId") ?? "";
+    print("type : $type");
     setState(() {
       isLoading = true;
     });
 
-    logindata = await SharedPreferences.getInstance();
-    type = logindata.getString("type") ?? "";
+    // Work id fetch from submittedWork
+    await Firebase.initializeApp();
+    FirebaseDatabase.instance
+        .ref("submitted_work")
+        .child(userId)
+        .onValue
+        .listen((snapshot) {
+      if (snapshot.snapshot.exists) {
+        submittedWorkIdList.clear();
+        for (DataSnapshot snp in snapshot.snapshot.children) {
+          submittedWorkIdList.add(
+            snp.child("work_id").value.toString(),
+          );
+        }
+      }
+    });
 
+    setState(() {});
     await Firebase.initializeApp();
     FirebaseDatabase.instance.ref("workTitle").onValue.listen((snapshot) {
       if (snapshot.snapshot.exists) {
         list.clear();
         for (DataSnapshot snp in snapshot.snapshot.children) {
-          list.add(DataModelPage(
+          if (!submittedWorkIdList.contains(snp.key.toString())) {
+            list.add(DataModelPage(
             key: snp.key.toString(),
             className: snp.child("classname").value.toString(),
             workName: snp.child("workname").value.toString(),
@@ -53,6 +77,7 @@ class _CardWidgetState extends State<CardWidget> {
             endTime: snp.child("endtime").value.toString(),
             faculty: snp.child("faculty").value.toString(),
           ));
+          }
         }
       }
       setState(() {
@@ -63,29 +88,35 @@ class _CardWidgetState extends State<CardWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height,
-      child: Column(
-        children: [
-          Expanded(
-            child: isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : list.isEmpty
-                    ? const Center(
-                        child: Text("No Work Found Here!"),
-                      )
-                    : ListView.builder(
-                        itemCount: list.length,
-                        itemBuilder: (context, index) {
-                          return getItemContainer(context, index);
-                        },
-                      ),
-          ),
-        ],
+    return RefreshIndicator(
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: Column(
+          children: [
+            Expanded(
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : list.isEmpty
+                      ? const Center(
+                          child: Text("No Work Found Here!"),
+                        )
+                      : ListView.builder(
+                          itemCount: list.length,
+                          itemBuilder: (context, index) {
+                            return getItemContainer(context, index);
+                          },
+                        ),
+            ),
+          ],
+        ),
       ),
+      onRefresh: () async {
+        await getData();
+        return;
+      },
     );
   }
 

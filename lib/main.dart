@@ -59,9 +59,11 @@ class _MainPageState extends State<MainPage> {
 
   @override
   void initState() {
-    getConnectivity();
     super.initState();
-    initial();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      getConnectivity();
+      initial();
+    });
   }
 
   getConnectivity() =>
@@ -83,10 +85,9 @@ class _MainPageState extends State<MainPage> {
 
   void initial() async {
     logindata = await SharedPreferences.getInstance();
-    setState(() {
-      username = logindata.getString('email')!;
-      type = logindata.getString("type") ?? "";
-    });
+    username = logindata.getString('email')!;
+    type = logindata.getString("type") ?? "";
+    setState(() {});
   }
 
   showDialogBox() => showCupertinoDialog<String>(
@@ -113,47 +114,42 @@ class _MainPageState extends State<MainPage> {
       );
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        drawer: NavigationDrawers(),
-        appBar: AppBar(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: const [
-              Text(
-                MyApp.title,
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: const [Colors.blueAccent, Colors.blueAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      drawer: NavigationDrawers(),
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: const [
+            Text(
+              MyApp.title,
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: const [Colors.blueAccent, Colors.blueAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
         ),
-        body: RefreshIndicator(
-          child: CardWidget(),
-          onRefresh: () {
-            return Future.delayed(Duration(seconds: 3), () {
-              setState(() {});
-            });
-          },
-        ),
-        floatingActionButton: type.contains("Teacher")
-            ? FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AssignWork()),
-                  );
-                },
-                backgroundColor: Colors.blue,
-                child: const Icon(Icons.add),
-              )
-            : Container(),
-      );
+      ),
+      body: CardWidget(),
+      floatingActionButton: type.contains("Teacher")
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AssignWork()),
+                );
+              },
+              backgroundColor: Colors.blue,
+              child: const Icon(Icons.add),
+            )
+          : Container(),
+    );
+  }
 }

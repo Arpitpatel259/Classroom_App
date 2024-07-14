@@ -265,48 +265,51 @@ class _LoginPage extends State<LoginPage> with SingleTickerProviderStateMixin {
         FirebaseDatabase.instance
             .ref("userSignUp/${userCredential.user!.uid}")
             .onValue
-            .listen((event) {
+            .listen((event) async {
           // Name
-          logindata.setString("name",
+          await  logindata.setString("name",
               "${event.snapshot.child("firstname").value} ${event.snapshot.child("lastname").value}");
           // Email
-          logindata.setString(
+          await  logindata.setString(
               "email", event.snapshot.child("email").value.toString());
           //organization
-          logindata.setString("organization",
+          await logindata.setString("organization",
               event.snapshot.child("organization").value.toString());
           // type
-          logindata.setString(
+          print("type ${event.snapshot.child("type").value.toString()}");
+          await logindata.setString(
               "type", event.snapshot.child("type").value.toString());
           //mobile no
-          logindata.setString(
+          await logindata.setString(
               "mobile", event.snapshot.child("mobile").value.toString());
           //mobile no
-          logindata.setString(
+          await logindata.setString(
               "userId", event.snapshot.child("id").value.toString());
           // enrollment
-          logindata.setString(
+          await logindata.setString(
               "enrollment", event.snapshot.child("unique id").value.toString());
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("You Have Been Logged In Successfully!"),
+              backgroundColor: Colors.teal,
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Dismiss',
+                disabledTextColor: Colors.white,
+                textColor: Colors.yellow,
+                onPressed: () {},
+              ),
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainPage()),
+          );
         });
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("You Have Been Logged In Successfully!"),
-          backgroundColor: Colors.teal,
-          behavior: SnackBarBehavior.floating,
-          action: SnackBarAction(
-            label: 'Dismiss',
-            disabledTextColor: Colors.white,
-            textColor: Colors.yellow,
-            onPressed: () {},
-          ),
-        ),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
-      );
+
     } on FirebaseAuthException catch (e) {
       String errorMessage;
       if (e.code == 'user-not-found') {
