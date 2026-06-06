@@ -1,53 +1,34 @@
-// ignore_for_file: avoid_print, must_be_immutable, use_key_in_widget_constructors, file_names, use_build_context_synchronously
+// ignore_for_file: body_might_complete_normally_nullable, avoid_print
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:wissme/DataBase%20Work/insert_work.dart';
 import 'package:wissme/main.dart';
 
-import '../DataBase Work/insert_work.dart';
-import '../Model/DataModelPage.dart';
-
-class EditAssignWork extends StatefulWidget {
-  final DataModelPage dataModelPage;
-
-  const EditAssignWork({required this.dataModelPage});
+class AssignWork extends StatefulWidget {
+  const AssignWork({super.key});
 
   @override
-  State<EditAssignWork> createState() => _EditAssignWorkState();
+  State<AssignWork> createState() => _AssignWorkState();
 }
 
-class _EditAssignWorkState extends State<EditAssignWork> {
+class _AssignWorkState extends State<AssignWork> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController classController;
-  late TextEditingController workNameController;
-  late TextEditingController workTitleController;
-  late TextEditingController facultyController;
-  late TextEditingController dateInput;
+  final classController = TextEditingController();
+  final workNameController = TextEditingController();
+  final workTitleController = TextEditingController();
+  final facultyController = TextEditingController();
+  final dateInput = TextEditingController();
 
   bool _isLoading = false;
 
-  // Design Tokens consistent with the app theme
+  // Design Tokens
   final Color primaryBlue = const Color(0xFF1A73E8);
   final Color darkText = const Color(0xFF1A1A2E);
   final Color bodyText = const Color(0xFF6B7280);
   final Color backgroundColor = const Color(0xFFF7F8FA);
   final Color borderColor = const Color(0xFFE5E7EB);
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize controllers with existing data
-    classController =
-        TextEditingController(text: widget.dataModelPage.className);
-    workNameController =
-        TextEditingController(text: widget.dataModelPage.workName);
-    workTitleController =
-        TextEditingController(text: widget.dataModelPage.workTitle);
-    facultyController =
-        TextEditingController(text: widget.dataModelPage.faculty);
-    dateInput = TextEditingController(text: widget.dataModelPage.endTime);
-  }
 
   @override
   void dispose() {
@@ -59,6 +40,7 @@ class _EditAssignWorkState extends State<EditAssignWork> {
     super.dispose();
   }
 
+  // Reusable input decoration matching Login/Register
   InputDecoration _inputDecoration(
       {required String hint, required IconData icon}) {
     return InputDecoration(
@@ -138,7 +120,7 @@ class _EditAssignWorkState extends State<EditAssignWork> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Update Assignment",
+          "Assign New Work",
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -157,7 +139,7 @@ class _EditAssignWorkState extends State<EditAssignWork> {
                 _buildField(
                   controller: classController,
                   label: "Class Name",
-                  hint: "Enter class name",
+                  hint: "e.g. 10th Grade A",
                   icon: Icons.school_outlined,
                   validator: (val) =>
                   (val == null || val.isEmpty)
@@ -165,9 +147,9 @@ class _EditAssignWorkState extends State<EditAssignWork> {
                       : null,
                 ),
                 _buildField(
-                  controller: workNameController,
+                  controller: workTitleController,
                   label: "Work Title",
-                  hint: "Enter work title",
+                  hint: "e.g. Mathematics Chapter 5",
                   icon: Icons.title_rounded,
                   validator: (val) =>
                   (val == null || val.isEmpty)
@@ -175,11 +157,11 @@ class _EditAssignWorkState extends State<EditAssignWork> {
                       : null,
                 ),
                 _buildField(
-                  controller: workTitleController,
-                  label: "Work Details",
-                  hint: "Update instructions...",
+                  controller: workNameController,
+                  label: "Work Details / Instructions",
+                  hint: "Describe the assignment here...",
                   icon: Icons.description_outlined,
-                  maxLines: 4,
+                  maxLines: 3,
                   validator: (val) =>
                   (val == null || val.isEmpty)
                       ? 'Please enter work details'
@@ -190,18 +172,18 @@ class _EditAssignWorkState extends State<EditAssignWork> {
                   controller: dateInput,
                   readOnly: true,
                   onTap: _selectDate,
-                  decoration: _inputDecoration(hint: "Select due date",
+                  decoration: _inputDecoration(hint: "Select deadline",
                       icon: Icons.calendar_month_outlined),
                   validator: (val) =>
                   (val == null || val.isEmpty)
-                      ? 'Please select a date'
+                      ? 'Please select a due date'
                       : null,
                 ),
                 const SizedBox(height: 18),
                 _buildField(
                   controller: facultyController,
-                  label: "Faculty",
-                  hint: "Enter faculty name",
+                  label: "Faculty Name",
+                  hint: "Enter your name",
                   icon: Icons.person_outline_rounded,
                   validator: (val) =>
                   (val == null || val.isEmpty)
@@ -228,11 +210,11 @@ class _EditAssignWorkState extends State<EditAssignWork> {
             color: primaryBlue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(Icons.edit_note_rounded, color: primaryBlue, size: 28),
+          child: Icon(Icons.assignment_add, color: primaryBlue, size: 28),
         ),
         const SizedBox(height: 16),
         Text(
-          "Edit Assignment",
+          "Create Assignment",
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -242,7 +224,7 @@ class _EditAssignWorkState extends State<EditAssignWork> {
         ),
         const SizedBox(height: 4),
         Text(
-          "Update the details for this assigned work.",
+          "Fill in the details to assign work to your students.",
           style: TextStyle(fontSize: 14, color: bodyText),
         ),
       ],
@@ -254,7 +236,7 @@ class _EditAssignWorkState extends State<EditAssignWork> {
       width: double.infinity,
       height: 54,
       child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleUpdate,
+        onPressed: _isLoading ? null : _handleAssignment,
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryBlue,
           shape: RoundedRectangleBorder(
@@ -268,46 +250,19 @@ class _EditAssignWorkState extends State<EditAssignWork> {
           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
         )
             : const Text(
-          'Update Assignment',
+          'Assign Work',
           style: TextStyle(
               fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
       ),
     );
-    /*return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleUpdate,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange[700],
-          // Kept orange-ish to distinguish 'Update' from 'Create'
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
-        ),
-        child: _isLoading
-            ? const SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-        )
-            : const Text(
-          'Update Assignment',
-          style: TextStyle(fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-              color: Colors.white),
-        ),
-      ),
-    );*/
   }
 
   Future<void> _selectDate() async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(1950),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
       builder: (context, child) {
         return Theme(
@@ -327,13 +282,12 @@ class _EditAssignWorkState extends State<EditAssignWork> {
     }
   }
 
-  void _handleUpdate() async {
+  void _handleAssignment() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
-        await updateDataForWork(
-          widget.dataModelPage.key,
+        await insertDataForWork(
           classController.text.trim(),
           workNameController.text.trim(),
           workTitleController.text.trim(),
@@ -341,9 +295,11 @@ class _EditAssignWorkState extends State<EditAssignWork> {
           facultyController.text.trim(),
         );
 
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Assignment Updated Successfully!"),
+            content: Text("Work Assigned Successfully!"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -354,11 +310,14 @@ class _EditAssignWorkState extends State<EditAssignWork> {
           MaterialPageRoute(builder: (context) => const MainPage()),
         );
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
         );
       } finally {
-        setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }

@@ -1,35 +1,57 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../DataBase Work/InsertData.dart';
-import '../Model/comWorkModelPage.dart';
+import '../Model/com_work_model_page.dart';
+import '../main.dart';
 
-class complete_work extends StatefulWidget {
-  const complete_work({super.key});
+class CompleteWork extends StatefulWidget {
+  const CompleteWork({super.key});
 
   @override
-  State<complete_work> createState() => _complete_workState();
+  State<CompleteWork> createState() => _CompleteWorkState();
 }
 
-class _complete_workState extends State<complete_work> {
+class _CompleteWorkState extends State<CompleteWork> with SingleTickerProviderStateMixin {
   bool isLoading = false;
-  List<comWorkModelPage> list = [];
+  List<ComWorkModelPage> list = [];
 
   var type = "";
   late SharedPreferences logindata;
-  String fileName = '';
+
+  late AnimationController _appearanceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // Design Tokens (Consistent with the rest of the app)
+  final Color primaryBlue = const Color(0xFF1A73E8);
+  final Color darkText = const Color(0xFF1A1A2E);
+  final Color bodyText = const Color(0xFF6B7280);
+  final Color backgroundColor = const Color(0xFFF7F8FA);
+  final Color borderColor = const Color(0xFFE5E7EB);
 
   @override
   void initState() {
     super.initState();
+    _appearanceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(parent: _appearanceController, curve: Curves.easeIn);
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _appearanceController, curve: Curves.easeOutCubic));
+
     getData();
-    String key = databaseRef.child("submitted_work").push().key ?? "";
-    getFileNameFromFirebase(key);
   }
 
-  getData() async {
+  @override
+  void dispose() {
+    _appearanceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> getData() async {
     setState(() {
       isLoading = true;
     });
@@ -49,218 +71,236 @@ class _complete_workState extends State<complete_work> {
       if (snapshot.snapshot.exists) {
         list.clear();
         for (DataSnapshot snp in snapshot.snapshot.children) {
-          list.add(comWorkModelPage(
+          list.add(ComWorkModelPage(
             key: snp.key.toString(),
-            work_class: snp.child("work_class").value.toString(),
+            workClass: snp.child("work_class").value.toString(),
             name: snp.child("name").value.toString(),
             timestamp: snp.child("timestamp").value.toString(),
-            work_title: snp.child("work_title").value.toString(),
+            workTitle: snp.child("work_title").value.toString(),
             filename: snp.child("filename").value.toString(),
           ));
         }
+        // Sort by timestamp descending (newest first)
+        list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       }
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          _appearanceController.forward();
+        });
+      }
     });
-  }
-
-  Future<void> getFileNameFromFirebase(String workId) async {
-    try {
-      SharedPreferences logindata = await SharedPreferences.getInstance();
-      String userId = logindata.getString("userId") ?? "";
-
-      // Reference to the file
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('user_uploads/$userId/$workId.pdf');
-
-      // Get the file URL
-      final fileUrl = await ref.getDownloadURL();
-
-      // Extract the file name from the full path
-      setState(() {
-        fileName = '$workId.pdf';
-      });
-    } catch (e) {
-      print('Failed to get file name or open PDF: $e');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Completed Work",
-          style: TextStyle(color: Colors.white),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blueAccent, Colors.blueAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage()),
+          (route) => false,
+        );
+      },
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: primaryBlue,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+            onPressed: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const MainPage()),
+              (route) => false,
             ),
           ),
+          title: const Text(
+            "Completed Work",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: -0.5),
+          ),
+          systemOverlayStyle: SystemUiOverlayStyle.light,
+        ),
+        body: isLoading
+            ? _buildLoadingState()
+            : list.isEmpty
+                ? _buildEmptyState()
+                : _buildListView(),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: CircularProgressIndicator(color: primaryBlue, strokeWidth: 3),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.assignment_turned_in_outlined, size: 64, color: borderColor),
+          const SizedBox(height: 16),
+          Text(
+            "No Submissions Yet",
+            style: TextStyle(color: darkText, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Work you submit will appear here.",
+            style: TextStyle(color: bodyText, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListView() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          itemCount: list.length,
+          itemBuilder: (context, index) {
+            return _buildCompletedWorkCard(index);
+          },
         ),
       ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Container(
-              margin: const EdgeInsets.all(5),
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
+    );
+  }
+
+  Widget _buildCompletedWorkCard(int index) {
+    final work = list[index];
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              // Potential Action: Open PDF URL if available
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: list.isEmpty
-                        ? const Center(
-                            child: Text("No Work Submitted Yet!"),
-                          )
-                        : ListView.builder(
-                            itemCount: list.length,
-                            itemBuilder: (context, index) {
-                              return getItemContainer(context, index);
-                            },
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          "SUBMITTED",
+                          style: TextStyle(
+                            color: Color(0xFF10B981),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _formatTimestamp(work.timestamp),
+                        style: TextStyle(color: bodyText, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    work.workTitle,
+                    style: TextStyle(
+                      color: darkText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow(Icons.school_outlined, "Class", work.workClass),
+                  const SizedBox(height: 8),
+                  _buildInfoRow(Icons.person_outline_rounded, "Student", work.name),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1),
+                  ),
+                  Row(
+                    children: [
+                      Icon(Icons.picture_as_pdf_rounded, size: 18, color: Colors.redAccent.withValues(alpha: 0.7)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          work.filename,
+                          style: TextStyle(
+                            color: darkText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: borderColor),
+                    ],
                   ),
                 ],
               ),
             ),
-    );
-  }
-
-  Widget getItemContainer(BuildContext context, int index) {
-    return GestureDetector(
-      onTap: () {}, // Call openPDF on tap
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        margin: EdgeInsets.only(
-            left: 10,
-            right: 10,
-            top: index == 0 ? 10 : 5,
-            bottom: index == list.length - 1 ? 10 : 5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: const LinearGradient(
-            colors: [Colors.blueAccent, Colors.purpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              spreadRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Name: ${list[index].name}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 15),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  children: [
-                    const TextSpan(
-                      text: 'Classname: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: list[index].work_class,
-                      style: const TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 15),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  children: [
-                    const TextSpan(
-                      text: 'Work Title: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: list[index].work_title,
-                      style: const TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 15),
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  children: [
-                    const TextSpan(
-                      text: 'Time: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: list[index].timestamp,
-                      style: const TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 15),
-              RichText(
-                // overflow: TextOverflow.ellipsis, // Handle text overflow
-                // maxLines: 1, // Limit to one line
-                text: TextSpan(
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  children: [
-                    const TextSpan(
-                      text: 'File: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: list[index].filename,
-                      style:
-                      const TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: bodyText),
+        const SizedBox(width: 8),
+        Text(
+          "$label: ",
+          style: TextStyle(color: bodyText, fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(color: darkText, fontSize: 13, fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatTimestamp(String timestamp) {
+    try {
+      DateTime dt = DateTime.parse(timestamp);
+      return "${dt.day}/${dt.month}/${dt.year}";
+    } catch (e) {
+      return timestamp;
+    }
   }
 }

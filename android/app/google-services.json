@@ -15,14 +15,6 @@
       },
       "oauth_client": [
         {
-          "client_id": "201653918245-4n10b1rsjfg008e9049dt96ialgqagos.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.wissme",
-            "certificate_hash": "892e89e1cc2248167d1a0913aad2925679f0b831"
-          }
-        },
-        {
           "client_id": "201653918245-isj19llib3jhklhojfr147drbbc66uq2.apps.googleusercontent.com",
           "client_type": 3
         }

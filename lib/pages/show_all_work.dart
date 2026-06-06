@@ -1,21 +1,20 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../DataBase Work/InsertData.dart';
-import '../Model/comWorkModelPage.dart';
+import 'package:wissme/Model/com_work_model_page.dart';
 
-class showAll_work extends StatefulWidget {
-  const showAll_work({super.key});
+
+class ShowallWork extends StatefulWidget {
+  const ShowallWork({super.key});
 
   @override
-  State<showAll_work> createState() => _showAll_workState();
+  State<ShowallWork> createState() => _ShowallWorkState();
 }
 
-class _showAll_workState extends State<showAll_work> {
+class _ShowallWorkState extends State<ShowallWork> {
   bool isLoading = false;
-  List<comWorkModelPage> list = [];
+  List<ComWorkModelPage> list = [];
 
   var type = "";
   late SharedPreferences logindata;
@@ -25,10 +24,9 @@ class _showAll_workState extends State<showAll_work> {
   void initState() {
     super.initState();
     getData();
-    String key = databaseRef.child("submitted_work").push().key ?? "";
   }
 
-  getData() async {
+  Future<void> getData() async {
     setState(() {
       isLoading = true;
     });
@@ -48,12 +46,12 @@ class _showAll_workState extends State<showAll_work> {
       if (snapshot.snapshot.exists) {
         list.clear();
         for (DataSnapshot snp in snapshot.snapshot.children) {
-          list.add(comWorkModelPage(
+          list.add(ComWorkModelPage(
             key: snp.key.toString(),
-            work_class: snp.child("work_class").value.toString(),
+            workClass: snp.child("work_class").value.toString(),
             name: snp.child("name").value.toString(),
             timestamp: snp.child("timestamp").value.toString(),
-            work_title: snp.child("work_title").value.toString(),
+            workTitle: snp.child("work_title").value.toString(),
             filename: snp.child("filename").value.toString(),
           ));
         }
@@ -130,7 +128,7 @@ class _showAll_workState extends State<showAll_work> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               spreadRadius: 5,
               offset: const Offset(0, 3),
@@ -165,7 +163,7 @@ class _showAll_workState extends State<showAll_work> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextSpan(
-                      text: list[index].work_class,
+                      text: list[index].workClass,
                       style: const TextStyle(fontWeight: FontWeight.normal),
                     ),
                   ],
@@ -185,7 +183,7 @@ class _showAll_workState extends State<showAll_work> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextSpan(
-                      text: list[index].work_title,
+                      text: list[index].workTitle,
                       style: const TextStyle(fontWeight: FontWeight.normal),
                     ),
                   ],

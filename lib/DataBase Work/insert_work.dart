@@ -11,15 +11,15 @@ var workNameController = TextEditingController();
 var endTimeController = TextEditingController();
 var facultyController = TextEditingController();
 
-void insertDataForWork(
+Future<void> insertDataForWork(
   String classname,
   String worktitle,
   String workname,
   String endtime,
   String faculty,
-) {
+) async {
   String? key = databaseRef.child("workTitle").push().key;
-  databaseRef.child("workTitle").child(key!).set({
+  await databaseRef.child("workTitle").child(key!).set({
     'id': key,
     'classname': classname,
     'worktitle': worktitle,
@@ -37,15 +37,15 @@ void insertDataForWork(
   facultyController.clear();
 }
 
-void updateDataForWork(
+Future<void> updateDataForWork(
   String key,
   String classname,
   String worktitle,
   String workname,
   String endtime,
   String faculty,
-) {
-  databaseRef.child("workTitle").child(key).set({
+) async {
+  await databaseRef.child("workTitle").child(key).set({
     'id': key,
     'classname': classname,
     'worktitle': worktitle,

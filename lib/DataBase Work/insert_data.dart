@@ -1,6 +1,3 @@
-// ignore: file_names
-// ignore_for_file: file_names, duplicate_ignore
-
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -15,7 +12,7 @@ var organizationController = TextEditingController();
 var passwordController = TextEditingController();
 var cPasswordController = TextEditingController();
 
-void insertDataRegister(
+Future<void> insertDataRegister(
     String id,
     String firstname,
     String lastname,
@@ -25,8 +22,9 @@ void insertDataRegister(
     String organization,
     String type,
     String password,
-    String cPassword) {
-  databaseRef.child("userSignUp").child(id).set({
+    String cPassword) async {
+
+  await databaseRef.child("userSignUp").child(id).set({
     'id': id,
     'firstname': firstname,
     'lastname': lastname,

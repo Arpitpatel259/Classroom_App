@@ -1,60 +1,74 @@
 import 'dart:io';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../DataBase Work/InsertWork.dart';
 import '../Model/DataModelPage.dart';
-import '../constants.dart';
 import 'package:file_picker/file_picker.dart';
-import 'complete_work.dart'; // Import complete_work page
+import 'complete_work.dart';
 
 class SubmitWork extends StatefulWidget {
   final DataModelPage dataModelPage;
 
-  SubmitWork({required this.dataModelPage});
+  const SubmitWork({super.key, required this.dataModelPage});
 
   @override
   State<SubmitWork> createState() => _SubmitWorkState();
 }
 
-class _SubmitWorkState extends State<SubmitWork> {
+class _SubmitWorkState extends State<SubmitWork> with SingleTickerProviderStateMixin {
   bool isLoading = false;
-  bool isFileUploaded = false;
   late SharedPreferences logindata;
-  var type = "";
-  late File? selectedFile;
-  late String fileName = "";
+  String type = "";
+  File? selectedFile;
+  String fileName = "";
   String? fileUrl;
 
-  FirebaseAuth auth = FirebaseAuth.instance;
+  late AnimationController _appearanceController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // Design Tokens (Consistent with Login/Register/Main)
+  final Color primaryBlue = const Color(0xFF1A73E8);
+  final Color darkText = const Color(0xFF1A1A2E);
+  final Color bodyText = const Color(0xFF6B7280);
+  final Color backgroundColor = const Color(0xFFF7F8FA);
+  final Color borderColor = const Color(0xFFE5E7EB);
 
   @override
   void initState() {
     super.initState();
-    getData();
+    _appearanceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(parent: _appearanceController, curve: Curves.easeIn);
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _appearanceController, curve: Curves.easeOutCubic));
+
+    _appearanceController.forward();
+    _getData();
   }
 
-  getData() async {
-    setState(() {
-      isLoading = true;
-    });
+  @override
+  void dispose() {
+    _appearanceController.dispose();
+    super.dispose();
+  }
 
+  Future<void> _getData() async {
+    setState(() => isLoading = true);
     logindata = await SharedPreferences.getInstance();
     type = logindata.getString("type") ?? "";
-
     await Firebase.initializeApp();
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
   }
 
-  // Function to handle file selection
   void selectFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    HapticFeedback.mediumImpact();
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
@@ -67,32 +81,24 @@ class _SubmitWorkState extends State<SubmitWork> {
     }
   }
 
-  // Function to upload file to Firebase Storage and submit data to Realtime Database
   Future<void> submitWork() async {
     if (selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Please select a PDF file first.'),
-        duration: Duration(seconds: 2),
-      ));
+      _showSnackBar('Please select a PDF file first.', isError: true);
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
-      SharedPreferences logindata = await SharedPreferences.getInstance();
       String userId = logindata.getString("userId") ?? "";
       String name = logindata.getString("name") ?? "";
       String email = logindata.getString("email") ?? "";
       String timestamp = DateTime.now().toString();
 
-      // Initial file name
       String newFileName = fileName;
       int fileCount = 0;
 
-      // Check if the file with the same name exists and add a digit if it does
+      // Smart file naming logic
       bool fileExists = true;
       while (fileExists) {
         Reference storageRef = FirebaseStorage.instance
@@ -100,27 +106,25 @@ class _SubmitWorkState extends State<SubmitWork> {
             .child('user_uploads/$userId/$newFileName');
         try {
           await storageRef.getDownloadURL();
-          // If the above line does not throw an error, the file exists
           fileCount++;
-          newFileName = "${fileName.split('.').first}_$fileCount.pdf";
+          String baseName = fileName.contains('.') ? fileName.split('.').first : fileName;
+          newFileName = "${baseName}_$fileCount.pdf";
         } catch (e) {
-          // If an error is thrown, the file does not exist
           fileExists = false;
         }
       }
 
-      // Upload file to Firebase Storage
       Reference finalStorageRef = FirebaseStorage.instance
           .ref()
           .child('user_uploads/$userId/$newFileName');
       UploadTask uploadTask = finalStorageRef.putFile(selectedFile!);
+      
       await uploadTask.whenComplete(() async {
         fileUrl = await finalStorageRef.getDownloadURL();
 
-        // Submit data to Realtime Database
-        DatabaseReference databaseRef = FirebaseDatabase.instance.reference();
+        DatabaseReference databaseRef = FirebaseDatabase.instance.ref();
         String key = databaseRef.child("submitted_work").push().key ?? "";
-        databaseRef.child("submitted_work").child(userId).child(key).set({
+        await databaseRef.child("submitted_work").child(userId).child(key).set({
           'id': key,
           'name': name,
           'email': email,
@@ -133,264 +137,286 @@ class _SubmitWorkState extends State<SubmitWork> {
           'work_title': widget.dataModelPage.workTitle,
         });
 
-        DatabaseReference database = FirebaseDatabase.instance.reference();
-        database.child("workTitle").child(widget.dataModelPage.key).update({
+        await databaseRef.child("workTitle").child(widget.dataModelPage.key).update({
           'isSubmit': true,
         });
 
-        setState(() {
-          isLoading = false;
-        });
+        if (!mounted) return;
+        setState(() => isLoading = false);
 
-        // Navigate to complete_work page after submission
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const complete_work(),
-          ),
+          MaterialPageRoute(builder: (context) => const CompleteWork()),
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('File uploaded and work submitted successfully!'),
-          duration: Duration(seconds: 2),
-        ));
+        _showSnackBar('Work submitted successfully!');
       });
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Failed to upload file and submit work: $e'),
-        duration: const Duration(seconds: 2),
-      ));
+      if (!mounted) return;
+      setState(() => isLoading = false);
+      _showSnackBar('Failed to submit work: $e', isError: true);
     }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(12),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = widget.dataModelPage;
-
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: primaryBlue,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           "Submit Work",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, letterSpacing: -0.5),
         ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blueAccent, Colors.blueAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Container(
-              margin: const EdgeInsets.all(5),
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        getItemContainer(data),
-                      ],
-                    ),
+          ? _buildLoadingState()
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAssignmentCard(),
+                      const SizedBox(height: 32),
+                      _buildSectionLabel("Upload Document"),
+                      const SizedBox(height: 12),
+                      _buildUploadZone(),
+                      const SizedBox(height: 48),
+                      _buildSubmitButton(),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
     );
   }
 
-  Widget getItemContainer(DataModelPage data) {
-    return GestureDetector(
-      onTap: () {
-        // Handle tap event
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: const LinearGradient(
-            colors: [Colors.blueAccent, Colors.purpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: primaryBlue, strokeWidth: 3),
+          const SizedBox(height: 20),
+          Text("Processing...", style: TextStyle(color: bodyText, fontSize: 14)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Text(
+      label.toUpperCase(),
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        color: bodyText,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
+  Widget _buildAssignmentCard() {
+    final data = widget.dataModelPage;
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              spreadRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              RichText(
-                  text: TextSpan(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      children: [
-                    const TextSpan(
-                      text: 'Classname: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: data.className,
-                      style: TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ])),
-              const SizedBox(height: 10),
-              RichText(
-                  text: TextSpan(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      children: [
-                    const TextSpan(
-                      text: 'Title: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: data.workTitle,
-                      style: TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ])),
-              const SizedBox(height: 10),
-              RichText(
-                  text: TextSpan(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      children: [
-                    const TextSpan(
-                      text: 'Due By: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: data.endTime,
-                      style: TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ])),
-              const SizedBox(height: 10),
-              RichText(
-                  text: TextSpan(
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      children: [
-                    const TextSpan(
-                      text: 'Instruction: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    TextSpan(
-                      text: data.workName,
-                      style: TextStyle(fontWeight: FontWeight.normal),
-                    ),
-                  ])),
-              const SizedBox(height: 10),
-              RichText(
-                text: fileName.isEmpty
-                    ? const TextSpan()
-                    : TextSpan(
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                        children: [
-                          const TextSpan(
-                            text: 'Filename: ',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          TextSpan(
-                            text: fileName.isEmpty ? "" : fileName,
-                            style: TextStyle(fontWeight: FontWeight.normal),
-                          ),
-                        ],
-                      ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: primaryBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  data.className.toUpperCase(),
+                  style: TextStyle(color: primaryBlue, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: selectFile,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(16.0),
-                        // Adjust padding as needed
-                        primary: Colors.orange,
-                        // Background color
-                        onPrimary: Colors.white,
-                        // Text color
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              10.25), // Adjust border radius as needed
-                        ),
-                      ),
-                      child: const Text(
-                        'Select File',
-                        style: TextStyle(
-                          color: Colors.white,
-                          letterSpacing: 2.5,
-                          fontSize: 15.0,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'OpenSans',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: submitWork,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(defaultPadding),
-                        backgroundColor: Colors.orange,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.25),
-                        ),
-                      ),
-                      child: const Text(
-                        'Submit Work',
-                        style: TextStyle(
-                          color: Colors.white,
-                          letterSpacing: 2.5,
-                          fontSize: 15.0,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'OpenSans',
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const Spacer(),
+              Icon(Icons.timer_outlined, size: 16, color: bodyText),
+              const SizedBox(width: 4),
+              Text(
+                "Due: ${data.endTime}",
+                style: TextStyle(color: bodyText, fontSize: 12, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: 10),
             ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            data.workTitle,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: darkText, letterSpacing: -0.5),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            data.workName,
+            style: TextStyle(fontSize: 15, color: bodyText, height: 1.5),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Divider(height: 1),
+          ),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 12,
+                backgroundColor: primaryBlue.withValues(alpha: 0.1),
+                child: Icon(Icons.person, size: 14, color: primaryBlue),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                data.faculty,
+                style: TextStyle(color: darkText, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadZone() {
+    return GestureDetector(
+      onTap: selectFile,
+      child: Container(
+        width: double.infinity,
+        height: 160,
+        decoration: BoxDecoration(
+          color: selectedFile != null ? Colors.white : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selectedFile != null ? const Color(0xFF10B981) : primaryBlue.withValues(alpha: 0.2),
+            width: 2,
+            style: selectedFile != null ? BorderStyle.solid : BorderStyle.solid,
+          ),
+        ),
+        child: selectedFile == null ? _buildEmptyFileState() : _buildSelectedFileState(),
+      ),
+    );
+  }
+
+  Widget _buildEmptyFileState() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.cloud_upload_outlined, size: 40, color: primaryBlue),
+        const SizedBox(height: 12),
+        Text(
+          "Click to select PDF",
+          style: TextStyle(color: darkText, fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "Only PDF files are supported",
+          style: TextStyle(color: bodyText, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedFileState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFEF4444), size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fileName,
+                  style: TextStyle(color: darkText, fontSize: 15, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  "Ready to submit",
+                  style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => setState(() {
+              selectedFile = null;
+              fileName = "";
+            }),
+            icon: Icon(Icons.refresh_rounded, color: bodyText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    bool isEnabled = selectedFile != null;
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: isEnabled ? submitWork : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          disabledBackgroundColor: borderColor,
+          elevation: isEnabled ? 2 : 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: Text(
+          'Submit Assignment',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: isEnabled ? Colors.white : bodyText,
+            letterSpacing: 0.5,
           ),
         ),
       ),
